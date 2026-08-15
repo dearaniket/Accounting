@@ -86,13 +86,30 @@ function upsertAccount(itemAccounts: ItemAccount[], projectId: string, name: str
 }
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<AppData>(() => loadFromStorage() ?? demoData);
-  const [darkMode, setDarkModeState] = useState<boolean>(() => loadUiSettings()?.darkMode ?? false);
-  const [fakeDataEnabled, setFakeDataEnabledState] = useState<boolean>(() => loadUiSettings()?.fakeDataEnabled ?? true);
+  // Always start with demoData so SSR and client initial renders match,
+  // then immediately overwrite from localStorage on the client.
+  const [data, setData] = useState<AppData>(demoData);
+  const [darkMode, setDarkModeState] = useState<boolean>(false);
+  const [fakeDataEnabled, setFakeDataEnabledState] = useState<boolean>(true);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Hydrate from localStorage after first client render
+  useEffect(() => {
+    const stored = loadFromStorage();
+    if (stored) setData(stored);
+    const ui = loadUiSettings();
+    if (ui) {
+      setDarkModeState(ui.darkMode);
+      setFakeDataEnabledState(ui.fakeDataEnabled);
+    }
+    setHydrated(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
+    if (!hydrated) return; // don't overwrite localStorage with demoData on first render
     saveToStorage(data);
-  }, [data]);
+  }, [data, hydrated]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
