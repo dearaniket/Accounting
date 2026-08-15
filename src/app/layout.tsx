@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
 
 import { AppProvider } from "@/components/providers/app-provider";
 
 import "./globals.css";
-
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "House Ledger",
@@ -17,8 +11,20 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${manrope.variable} h-full antialiased`}>
-      <body className="min-h-full bg-[var(--surface-app)] text-[var(--text-strong)]">
+    <html lang="en" className="h-full" data-theme="dark">
+      <head>
+        {/* Shentox font via cdnfonts */}
+        <link
+          rel="preconnect"
+          href="https://fonts.cdnfonts.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.cdnfonts.com/css/shentox"
+        />
+      </head>
+      <body className="min-h-dvh antialiased">
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

@@ -1,138 +1,175 @@
 @import "tailwindcss";
 
+/* ─── Design Tokens ────────────────────────────────────────────────── */
 :root {
-  --surface-app: #c8cdf5;
-  --surface-panel: #fffdf8;
-  --surface-card: #ffffff;
-  --surface-card-soft: #f4f5ff;
-  --surface-accent: #111111;
-  --surface-success: #9fe7d8;
-  --text-strong: #111111;
-  --text-body: #302f36;
-  --text-muted: #737184;
-  --border-subtle: #111111;
-  --border-strong: #111111;
-  --color-primary: #f6e56a;
-  --color-secondary: #c9c1ff;
-  --color-accent: #9fe7d8;
-  --color-danger: #ff8d87;
-  --color-warning: #f6e56a;
-  --color-overlay: rgba(17, 17, 17, 0.4);
-  --shadow-card: 0 16px 36px rgba(56, 52, 92, 0.12);
-  --radius-card: 28px;
-  --paper-line: rgba(17, 17, 17, 0.06);
-  --surface-chip-yellow: #f6e56a;
-  --surface-chip-mint: #9fe7d8;
-  --surface-chip-lilac: #c9c1ff;
+  /* Void-dark palette */
+  --bg-void:        #050508;
+  --bg-base:        #0a0a0f;
+  --bg-elevated:    #0f0f18;
+  --bg-card:        rgba(255, 255, 255, 0.035);
+  --bg-card-hover:  rgba(255, 255, 255, 0.065);
+  --bg-card-muted:  rgba(255, 255, 255, 0.018);
+
+  /* Text */
+  --text-primary:   #F0EFFF;
+  --text-secondary: #C4C2D4;
+  --text-muted:     #8A8F98;
+  --text-faint:     #4A4F5A;
+
+  /* Accent — Indigo */
+  --accent:         #6366F1;
+  --accent-hover:   #818CF8;
+  --accent-glow:    rgba(99, 102, 241, 0.28);
+  --accent-dim:     rgba(99, 102, 241, 0.12);
+
+  /* Semantic colours */
+  --success:        #10B981;
+  --success-dim:    rgba(16, 185, 129, 0.14);
+  --warning:        #F59E0B;
+  --warning-dim:    rgba(245, 158, 11, 0.14);
+  --danger:         #F43F5E;
+  --danger-dim:     rgba(244, 63, 94, 0.14);
+
+  /* Borders */
+  --border:         rgba(255, 255, 255, 0.07);
+  --border-strong:  rgba(255, 255, 255, 0.15);
+  --border-accent:  rgba(99, 102, 241, 0.4);
+
+  /* Effects */
+  --shadow-card:    0 4px 28px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.4);
+  --shadow-glow:    0 0 24px rgba(99, 102, 241, 0.18);
+  --radius-sm:      12px;
+  --radius:         18px;
+  --radius-lg:      26px;
+  --radius-xl:      34px;
+  --overlay:        rgba(0, 0, 0, 0.72);
+
+  /* Legacy aliases */
+  --surface-app:        var(--bg-void);
+  --surface-panel:      var(--bg-base);
+  --surface-card:       var(--bg-elevated);
+  --surface-card-soft:  var(--bg-card);
+  --surface-accent:     var(--accent);
+  --surface-success:    var(--success-dim);
+  --text-strong:        var(--text-primary);
+  --text-body:          var(--text-secondary);
+  --border-subtle:      var(--border);
+  --color-primary:      var(--accent);
+  --color-secondary:    rgba(99, 102, 241, 0.5);
+  --color-accent:       var(--success);
+  --color-danger:       var(--danger);
+  --color-warning:      var(--warning);
+  --color-overlay:      var(--overlay);
+  --shadow-card-old:    var(--shadow-card);
+  --radius-card:        var(--radius-lg);
+  --paper-line:         rgba(255, 255, 255, 0.04);
+  --surface-chip-yellow: rgba(245, 158, 11, 0.15);
+  --surface-chip-mint:   rgba(16, 185, 129, 0.15);
+  --surface-chip-lilac:  rgba(99, 102, 241, 0.15);
 }
 
-:root[data-theme="dark"] {
-  --surface-app: #1d1d2d;
-  --surface-panel: #24243a;
-  --surface-card: #2b2b42;
-  --surface-card-soft: #31314d;
-  --surface-accent: #ffffff;
-  --surface-success: #28594f;
-  --text-strong: #fffefb;
-  --text-body: #e4e0f7;
-  --text-muted: #aba5cb;
-  --border-subtle: #ffffff;
-  --border-strong: #ffffff;
-  --color-primary: #f6e56a;
-  --color-secondary: #a99eff;
-  --color-accent: #83dcca;
-  --color-danger: #f08f8a;
-  --color-warning: #f6e56a;
-  --color-overlay: rgba(5, 5, 10, 0.58);
-  --shadow-card: 0 18px 40px rgba(5, 5, 10, 0.35);
-  --paper-line: rgba(255, 255, 255, 0.05);
-  --surface-chip-yellow: #6e6112;
-  --surface-chip-mint: #204d45;
-  --surface-chip-lilac: #4a427b;
-}
-
+/* ─── Shentox Font Stack ────────────────────────────────────────────── */
 @theme inline {
-  --font-sans: var(--font-manrope);
+  --font-sans: 'Shentox', 'Rajdhani', 'Exo 2', system-ui, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
+/* ─── Reset & Base ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 30%),
-    linear-gradient(180deg, var(--surface-app) 0%, color-mix(in srgb, var(--surface-app) 90%, white) 100%);
-  color: var(--text-strong);
-  font-family: var(--font-manrope), sans-serif;
+  min-height: 100dvh;
+  background: var(--bg-void);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(16, 185, 129, 0.05), transparent);
+  color: var(--text-primary);
+  /* Shentox with system fallbacks */
+  font-family: 'Shentox', 'Rajdhani', 'Exo 2', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
 }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
 
-button {
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
   cursor: pointer;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: none;
+::selection { background: rgba(99, 102, 241, 0.35); }
+
+/* ─── Glass Card ───────────────────────────────────────────────────── */
+.glass {
+  background:  rgba(255, 255, 255, 0.035);
+  border:      1px solid var(--border);
+  box-shadow:  var(--shadow-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-::selection {
-  background: rgba(201, 193, 255, 0.45);
+.glass-strong {
+  background:  rgba(255, 255, 255, 0.06);
+  border:      1px solid var(--border-strong);
+  box-shadow:  var(--shadow-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.panel {
-  border: 2px solid var(--border-subtle);
-  background: var(--surface-panel);
-  box-shadow: var(--shadow-card);
-}
+/* Legacy panel classes */
+.panel      { background: var(--bg-base);       border: 1px solid var(--border); box-shadow: var(--shadow-card); }
+.panel-soft { background: var(--bg-card-muted); border: 1px solid var(--border); }
 
-.panel-soft {
-  border: 2px solid var(--border-subtle);
-  background: var(--surface-card-soft);
-}
+/* ─── Focus Ring ───────────────────────────────────────────────────── */
+.focus-ring { outline: none; transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease, opacity 150ms ease, background 150ms ease; }
+.focus-ring:focus-visible { box-shadow: 0 0 0 3px var(--accent-glow), 0 0 0 1px var(--accent); }
 
-.focus-ring {
-  outline: none;
-  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease, background-color 200ms ease;
-}
-
-.focus-ring:focus-visible {
-  box-shadow: 0 0 0 3px rgba(201, 193, 255, 0.6);
-  border-color: var(--border-strong);
-}
-
+/* ─── Typography ───────────────────────────────────────────────────── */
 .font-display {
-  font-family: var(--font-manrope), sans-serif;
+  font-family: 'Shentox', 'Rajdhani', 'Exo 2', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+.font-mono-nums { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────── */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 999px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* ─── Ledger Grid ───────────────────────────────────────────────────── */
+.ledger-grid { background: var(--bg-base); }
+
+/* ─── Accent Glow Button ────────────────────────────────────────────── */
+.glow-btn {
+  box-shadow: 0 0 20px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.4);
+}
+.glow-btn:hover {
+  box-shadow: 0 0 32px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.4);
+  transform: translateY(-1px);
 }
 
-.ledger-grid {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-card-soft) 75%, white) 0%, var(--surface-panel) 100%);
+/* ─── Page Location Pill ────────────────────────────────────────────── */
+.page-active-bar {
+  position: relative;
 }
-
-.scrollbar-thin::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(17, 17, 17, 0.2);
+.page-active-bar::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
   border-radius: 999px;
+  background: white;
+  opacity: 0.9;
 }
 
+/* ─── Reduced Motion ───────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;

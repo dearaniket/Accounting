@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, Plus, Calendar, Pencil, Trash2, CreditCard, PaperclipIcon, BookOpenText } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
@@ -8,12 +8,256 @@ import { DateRangeFilter } from "@/components/date-range-filter";
 import { EntryDialog } from "@/components/entry-dialog";
 import { PaymentDialog } from "@/components/payment-dialog";
 import { useAppData } from "@/components/providers/app-provider";
-import { AppButton, StatusBadge, Surface, TextInput } from "@/components/ui";
+import { AppButton, StatusBadge } from "@/components/ui";
 import { filterEntries, formatCurrency, formatDate, getEntrySummary } from "@/lib/finance";
 import { DateRange, JournalEntry } from "@/lib/types";
 
 const rangeDefaults: DateRange = { preset: "all-time" };
 
+/* ─── Entry Card ────────────────────────────────────────────────────── */
+function EntryCard({
+  entry,
+  active,
+  accounts,
+  onClick,
+}: {
+  entry: JournalEntry;
+  active: boolean;
+  accounts: { id: string; name: string }[];
+  onClick: () => void;
+}) {
+  const summary = getEntrySummary(entry);
+  const statusTone = summary.paymentStatus === "Paid" ? "success" : summary.paymentStatus === "Pending" ? "muted" : "warning";
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "focus-ring w-full rounded-[var(--radius-lg)] p-5 text-left transition-all duration-200",
+        active
+          ? "bg-[var(--accent-dim)] ring-1 ring-[var(--accent)] shadow-[0_0_24px_var(--accent-glow)]"
+          : "glass hover:bg-[var(--bg-card-hover)] hover:-translate-y-px",
+      ].join(" ")}
+    >
+      {/* Top row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+          <Calendar className="h-3.5 w-3.5" aria-hidden />
+          {formatDate(entry.date)}
+        </div>
+        <StatusBadge tone={statusTone}>{summary.paymentStatus}</StatusBadge>
+      </div>
+
+      {/* Bill name */}
+      <h3 className="font-display mt-3 text-2xl font-bold leading-tight text-[var(--text-primary)]">
+        {entry.particular}
+      </h3>
+
+      {/* Item pills */}
+      {entry.items.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {entry.items.slice(0, 4).map((item) => {
+            const acc = accounts.find((a) => a.id === item.itemAccountId);
+            return (
+              <span
+                key={item.id}
+                className="rounded-full bg-[var(--bg-card)] px-2.5 py-0.5 text-[11px] text-[var(--text-muted)] ring-1 ring-[var(--border)]"
+              >
+                {acc?.name ?? "—"}
+              </span>
+            );
+          })}
+          {entry.items.length > 4 && (
+            <span className="rounded-full bg-[var(--bg-card)] px-2.5 py-0.5 text-[11px] text-[var(--text-faint)] ring-1 ring-[var(--border)]">
+              +{entry.items.length - 4} more
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Amount row */}
+      <div className="mt-4 flex items-end justify-between">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-0.5 text-xs">
+          <span className="text-[var(--text-faint)]">Paid</span>
+          <span className="text-[var(--text-faint)]">Due</span>
+          <span className="font-semibold text-[var(--success)]">{formatCurrency(summary.paidPaise)}</span>
+          <span className={summary.outstandingPaise > 0 ? "font-semibold text-[var(--warning)]" : "font-semibold text-[var(--text-muted)]"}>
+            {formatCurrency(summary.outstandingPaise)}
+          </span>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-[var(--text-faint)]">Total</p>
+          <p className="font-display text-xl font-bold text-[var(--text-primary)]">
+            {formatCurrency(summary.totalPaise)}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/* ─── Entry Detail Panel ────────────────────────────────────────────── */
+function EntryDetail({
+  entry,
+  accounts,
+  onEdit,
+  onAddPayment,
+  onDelete,
+}: {
+  entry: JournalEntry;
+  accounts: { id: string; name: string }[];
+  onEdit: () => void;
+  onAddPayment: () => void;
+  onDelete: () => void;
+}) {
+  const summary = getEntrySummary(entry);
+  const chipColors = [
+    "rgba(99,102,241,0.12)",
+    "rgba(16,185,129,0.12)",
+    "rgba(245,158,11,0.12)",
+    "rgba(244,63,94,0.12)",
+    "rgba(139,92,246,0.12)",
+  ];
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div
+        className="rounded-[var(--radius-lg)] p-5"
+        style={{
+          background: "linear-gradient(135deg, var(--accent-dim), rgba(99,102,241,0.05))",
+          border: "1px solid var(--border-accent)",
+        }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--accent)]">Entry Detail</p>
+        <h3 className="font-display mt-2 text-3xl font-bold leading-tight text-[var(--text-primary)]">
+          {entry.particular}
+        </h3>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
+          <Calendar className="h-3.5 w-3.5" aria-hidden />
+          {formatDate(entry.date)}
+        </p>
+
+        {/* Summary totals */}
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          {[
+            { label: "Total",       value: summary.totalPaise,       color: "var(--text-primary)" },
+            { label: "Paid",        value: summary.paidPaise,        color: "var(--success)" },
+            { label: "Outstanding", value: summary.outstandingPaise, color: summary.outstandingPaise > 0 ? "var(--warning)" : "var(--text-muted)" },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-[var(--radius-sm)] bg-[var(--bg-card)] p-3">
+              <p className="text-[10px] uppercase tracking-widest text-[var(--text-faint)]">{label}</p>
+              <p className="font-display mt-1 text-lg font-bold" style={{ color }}>{formatCurrency(value)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Items */}
+      <div className="glass rounded-[var(--radius-lg)] p-5">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+          Bill items · {entry.items.length}
+        </p>
+        <div className="mt-3 flex flex-col gap-2">
+          {entry.items.map((item, i) => {
+            const acc = accounts.find((a) => a.id === item.itemAccountId);
+            return (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded-[var(--radius-sm)] px-4 py-3"
+                style={{ background: chipColors[i % chipColors.length], border: "1px solid var(--border)" }}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{acc?.name ?? "Unknown"}</p>
+                  {(item.quantity || item.unit) && (
+                    <p className="text-xs text-[var(--text-muted)]">
+                      {item.quantity ? `Qty ${item.quantity}` : ""}
+                      {item.unit ? ` ${item.unit}` : ""}
+                    </p>
+                  )}
+                </div>
+                <p className="font-display text-base font-bold text-[var(--text-primary)]">
+                  {formatCurrency(item.amountPaise)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Payments */}
+      <div className="glass rounded-[var(--radius-lg)] p-5">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+          Payment history
+        </p>
+        {entry.payments.length ? (
+          <div className="mt-3 flex flex-col gap-2">
+            {entry.payments.map((pay) => (
+              <div
+                key={pay.id}
+                className="flex items-center justify-between rounded-[var(--radius-sm)] bg-[var(--success-dim)] px-4 py-3 ring-1 ring-[var(--success)]/20"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">{formatDate(pay.date)}</p>
+                  {pay.note && <p className="text-xs text-[var(--text-muted)]">{pay.note}</p>}
+                </div>
+                <p className="font-display text-base font-bold text-[var(--success)]">
+                  {formatCurrency(pay.amountPaise)}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-[var(--text-faint)]">No payments recorded yet.</p>
+        )}
+      </div>
+
+      {/* Bill photo */}
+      {entry.attachments.length > 0 && (
+        <div className="glass rounded-[var(--radius-lg)] p-5">
+          <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+            <PaperclipIcon className="h-3.5 w-3.5" aria-hidden />
+            Bill photo
+          </p>
+          <div className="overflow-hidden rounded-[var(--radius)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={entry.attachments[0].dataUrl}
+              alt={entry.attachments[0].fileName}
+              className="aspect-[4/3] w-full object-cover"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Notes */}
+      {entry.notes && (
+        <div className="rounded-[var(--radius-lg)] bg-[var(--bg-card)] p-4 ring-1 ring-[var(--border)]">
+          <p className="text-sm leading-relaxed text-[var(--text-secondary)]">{entry.notes}</p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="grid grid-cols-3 gap-2">
+        <AppButton tone="secondary" onClick={onEdit}>
+          <Pencil className="h-4 w-4" aria-hidden />
+          Edit
+        </AppButton>
+        <AppButton tone="secondary" onClick={onAddPayment}>
+          <CreditCard className="h-4 w-4" aria-hidden />
+          Pay
+        </AppButton>
+        <AppButton tone="danger" onClick={onDelete}>
+          <Trash2 className="h-4 w-4" aria-hidden />
+          Delete
+        </AppButton>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Journal View ──────────────────────────────────────────────────── */
 export function JournalView() {
   const { data, deleteEntry } = useAppData();
   const [range, setRange] = useState<DateRange>(rangeDefaults);
@@ -21,33 +265,31 @@ export function JournalView() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | undefined>();
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
   const [paymentEntryId, setPaymentEntryId] = useState<string | null>(null);
-  const entries = useMemo(() => {
-    const query = search.trim().toLowerCase();
 
+  const entries = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return filterEntries(data.journalEntries, range)
-      .filter((entry) => {
-        const summary = getEntrySummary(entry);
-        const accountNames = entry.items
-          .map((item) => data.itemAccounts.find((account) => account.id === item.itemAccountId)?.name ?? "")
+      .filter((e) => {
+        if (!q) return true;
+        const names = e.items
+          .map((i) => data.itemAccounts.find((a) => a.id === i.itemAccountId)?.name ?? "")
           .join(" ")
           .toLowerCase();
-
         return (
-          !query ||
-          entry.particular.toLowerCase().includes(query) ||
-          accountNames.includes(query) ||
-          `${summary.totalPaise / 100}`.includes(query)
+          e.particular.toLowerCase().includes(q) ||
+          names.includes(q) ||
+          `${getEntrySummary(e).totalPaise / 100}`.includes(q)
         );
       })
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [data.itemAccounts, data.journalEntries, range, search]);
+  }, [data.journalEntries, data.itemAccounts, range, search]);
 
   return (
     <AppShell
       title="Journal"
-      description="Use the journal as the source of truth. Every item feeds its ledger automatically, and payment history stays attached to the same entry."
+      description="Your construction expense journal. Every entry auto-feeds the ledgers, analytics, and outstanding dues."
       action={
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <DateRangeFilter value={range} onChange={setRange} />
           <AppButton
             onClick={() => {
@@ -55,198 +297,122 @@ export function JournalView() {
               setEntryDialogOpen(true);
             }}
           >
-            + New entry
+            <Plus className="h-4 w-4" aria-hidden />
+            New entry
           </AppButton>
         </div>
       }
     >
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="grid gap-4">
-          <Surface className="p-5">
-            <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
-              <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-[var(--text-muted)]">Journal desk</p>
-                <h3 className="font-display mt-3 text-4xl font-extrabold text-[var(--text-strong)]">
-                  Enter expenses with the same playful, clear card rhythm as the reference UI.
-                </h3>
-              </div>
-              <div className="rounded-[26px] border-2 border-[var(--border-subtle)] bg-[var(--surface-chip-mint)] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Fast mobile flow</p>
-                <p className="mt-2 text-sm leading-7 text-[var(--text-body)]">
-                  Date, particular, items, payment. The totals, ledgers, and dues update from the same source entry.
-                </p>
-              </div>
-            </div>
-          </Surface>
-
-          <Surface className="p-4">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-              <TextInput className="pl-10" placeholder="Search particular, item, or amount" value={search} onChange={(event) => setSearch(event.target.value)} />
-            </div>
-          </Surface>
-
-          <div className="grid gap-4">
-            {entries.map((entry) => {
-              const summary = getEntrySummary(entry);
-              const tone = summary.paymentStatus === "Paid" ? "success" : summary.paymentStatus === "Pending" ? "muted" : "warning";
-
-              return (
-                <Surface key={entry.id} className="overflow-hidden">
-                  <button
-                    className="w-full p-5 text-left transition duration-200 hover:bg-[rgba(255,255,255,0.35)]"
-                    onClick={() => setSelectedEntry(entry)}
-                    type="button"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm text-[var(--text-muted)]">{formatDate(entry.date)}</p>
-                        <h3 className="font-display mt-2 text-[1.7rem] font-extrabold leading-tight text-[var(--text-strong)]">
-                          {entry.particular}
-                        </h3>
-                      </div>
-                      <StatusBadge tone={tone}>{summary.paymentStatus}</StatusBadge>
-                    </div>
-                    <div className="mt-5 grid gap-3 text-sm text-[var(--text-body)] sm:grid-cols-4">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Items</p>
-                        <p className="mt-1 font-semibold text-[var(--text-strong)]">{entry.items.length}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Total</p>
-                        <p className="mt-1 font-semibold text-[var(--text-strong)]">{formatCurrency(summary.totalPaise)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Paid</p>
-                        <p className="mt-1 font-semibold text-[var(--text-strong)]">{formatCurrency(summary.paidPaise)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">Outstanding</p>
-                        <p className="mt-1 font-semibold text-[var(--text-strong)]">{formatCurrency(summary.outstandingPaise)}</p>
-                      </div>
-                    </div>
-                  </button>
-                </Surface>
-              );
-            })}
+      <div className="grid gap-5 xl:grid-cols-[1fr_380px]">
+        {/* ── Left: Entry List ───────────────────────────────────── */}
+        <div className="flex flex-col gap-4">
+          {/* Search */}
+          <div className="glass relative rounded-[var(--radius-lg)] px-4 py-3">
+            <Search
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-faint)]"
+              aria-hidden
+            />
+            <input
+              className="w-full bg-transparent pl-7 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-faint)] focus:outline-none"
+              placeholder="Search bill name, material, amount…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Search journal entries"
+            />
           </div>
-        </div>
 
-        <Surface className="sticky top-4 p-5">
-          {selectedEntry ? (
-            <>
-              <p className="text-xs uppercase tracking-[0.28em] text-[var(--text-muted)]">Entry detail</p>
-              <h3 className="font-display mt-2 text-4xl font-extrabold leading-tight text-[var(--text-strong)]">{selectedEntry.particular}</h3>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">{formatDate(selectedEntry.date)}</p>
+          {/* Counter */}
+          {entries.length > 0 && (
+            <p className="px-1 text-xs text-[var(--text-faint)]">
+              {entries.length} {entries.length === 1 ? "entry" : "entries"}
+            </p>
+          )}
 
-              <div className="mt-6 grid gap-3">
-                {selectedEntry.items.map((item, index) => {
-                  const account = data.itemAccounts.find((candidate) => candidate.id === item.itemAccountId);
-                  return (
-                    <div
-                      key={item.id}
-                      className="rounded-[22px] border-2 border-[var(--border-subtle)] p-4"
-                      style={{ backgroundColor: index % 3 === 0 ? "var(--surface-chip-yellow)" : index % 3 === 1 ? "var(--surface-chip-lilac)" : "var(--surface-chip-mint)" }}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-[var(--text-strong)]">{account?.name}</p>
-                        <p className="font-semibold text-[var(--text-strong)]">{formatCurrency(item.amountPaise)}</p>
-                      </div>
-                      <p className="mt-2 text-sm text-[var(--text-muted)]">
-                        {item.quantity ? `Qty ${item.quantity}` : "Qty omitted"}{item.unit ? ` • ${item.unit}` : ""}
-                      </p>
-                    </div>
-                  );
-                })}
+          {/* Entry cards */}
+          {entries.length === 0 ? (
+            <div className="glass flex flex-col items-center justify-center rounded-[var(--radius-xl)] py-16 text-center">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-full"
+                style={{ background: "var(--accent-dim)", border: "1px solid var(--border-accent)" }}
+              >
+                <BookOpenText className="h-7 w-7 text-[var(--accent)]" aria-hidden />
               </div>
-
-              <div className="mt-6 grid gap-3">
-                <div className="flex items-center justify-between text-sm text-[var(--text-body)]">
-                  <span>Entry total</span>
-                  <span>{formatCurrency(getEntrySummary(selectedEntry).totalPaise)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-[var(--text-body)]">
-                  <span>Paid</span>
-                  <span>{formatCurrency(getEntrySummary(selectedEntry).paidPaise)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm text-[var(--text-body)]">
-                  <span>Outstanding</span>
-                  <span>{formatCurrency(getEntrySummary(selectedEntry).outstandingPaise)}</span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <h4 className="font-display text-2xl font-extrabold text-[var(--text-strong)]">Payment history</h4>
-                <div className="mt-3 grid gap-3">
-                  {selectedEntry.payments.length ? (
-                    selectedEntry.payments.map((payment, index) => (
-                      <div
-                        key={payment.id}
-                        className="rounded-[22px] border-2 border-[var(--border-subtle)] p-4"
-                        style={{ backgroundColor: index % 2 === 0 ? "var(--surface-card)" : "var(--surface-card-soft)" }}
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-[var(--text-body)]">{formatDate(payment.date)}</span>
-                          <span className="font-semibold text-[var(--text-strong)]">{formatCurrency(payment.amountPaise)}</span>
-                        </div>
-                        {payment.note ? <p className="mt-2 text-sm text-[var(--text-muted)]">{payment.note}</p> : null}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-[var(--text-muted)]">No payments recorded yet.</p>
-                  )}
-                </div>
-              </div>
-
-              {selectedEntry.attachments.length ? (
-                <div className="mt-6">
-                  <h4 className="font-display text-2xl font-extrabold text-[var(--text-strong)]">Bill photo</h4>
-                  <div className="mt-3 overflow-hidden rounded-[24px] border border-[var(--border-subtle)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt={selectedEntry.attachments[0].fileName} className="aspect-[4/3] w-full object-cover" src={selectedEntry.attachments[0].dataUrl} />
-                  </div>
-                </div>
-              ) : null}
-
-              {selectedEntry.notes ? (
-                <div className="mt-6 rounded-[22px] border-2 border-[var(--border-subtle)] bg-[var(--surface-card-soft)] p-4">
-                  <p className="text-sm leading-7 text-[var(--text-body)]">{selectedEntry.notes}</p>
-                </div>
-              ) : null}
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <AppButton
-                  tone="secondary"
-                  onClick={() => {
-                    setEntryDialogOpen(true);
-                  }}
-                >
-                  Edit
-                </AppButton>
-                <AppButton tone="secondary" onClick={() => setPaymentEntryId(selectedEntry.id)}>
-                  Add payment
-                </AppButton>
-                <AppButton
-                  tone="danger"
-                  onClick={() => {
-                    deleteEntry(selectedEntry.id);
-                    setSelectedEntry(undefined);
-                  }}
-                >
-                  Delete
-                </AppButton>
-              </div>
-            </>
+              <p className="mt-4 text-base font-semibold text-[var(--text-secondary)]">No entries yet</p>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">Tap "+ New entry" to add your first bill.</p>
+            </div>
           ) : (
-            <div className="flex min-h-[320px] items-center justify-center text-center text-[var(--text-muted)]">
-              Tap a journal entry to inspect items, payment history, attachments, and actions.
+            <div className="flex flex-col gap-3">
+              {entries.map((entry) => (
+                <EntryCard
+                  key={entry.id}
+                  entry={entry}
+                  active={selectedEntry?.id === entry.id}
+                  accounts={data.itemAccounts}
+                  onClick={() => setSelectedEntry((prev) => (prev?.id === entry.id ? undefined : entry))}
+                />
+              ))}
             </div>
           )}
-        </Surface>
+        </div>
+
+        {/* ── Right: Detail Panel ────────────────────────────────── */}
+        <div className="hidden xl:block">
+          <div className="sticky top-4">
+            {selectedEntry ? (
+              <EntryDetail
+                entry={selectedEntry}
+                accounts={data.itemAccounts}
+                onEdit={() => setEntryDialogOpen(true)}
+                onAddPayment={() => setPaymentEntryId(selectedEntry.id)}
+                onDelete={() => {
+                  deleteEntry(selectedEntry.id);
+                  setSelectedEntry(undefined);
+                }}
+              />
+            ) : (
+              <div className="glass flex min-h-[360px] flex-col items-center justify-center rounded-[var(--radius-xl)] p-8 text-center">
+                <div
+                  className="flex h-14 w-14 items-center justify-center rounded-full"
+                  style={{ background: "var(--accent-dim)", border: "1px solid var(--border-accent)" }}
+                >
+                  <BookOpenText className="h-6 w-6 text-[var(--accent)]" aria-hidden />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-[var(--text-secondary)]">Select an entry</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Tap any bill card to view items, payments, and actions.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <EntryDialog entry={selectedEntry} open={entryDialogOpen} onClose={() => setEntryDialogOpen(false)} />
-      <PaymentDialog entryId={paymentEntryId || ""} open={Boolean(paymentEntryId)} onClose={() => setPaymentEntryId(null)} />
+      {/* Mobile expanded detail (below cards on mobile) */}
+      {selectedEntry && (
+        <div className="mt-4 xl:hidden">
+          <EntryDetail
+            entry={selectedEntry}
+            accounts={data.itemAccounts}
+            onEdit={() => setEntryDialogOpen(true)}
+            onAddPayment={() => setPaymentEntryId(selectedEntry.id)}
+            onDelete={() => {
+              deleteEntry(selectedEntry.id);
+              setSelectedEntry(undefined);
+            }}
+          />
+        </div>
+      )}
+
+      <EntryDialog
+        entry={selectedEntry}
+        open={entryDialogOpen}
+        onClose={() => setEntryDialogOpen(false)}
+      />
+      <PaymentDialog
+        entryId={paymentEntryId ?? ""}
+        open={Boolean(paymentEntryId)}
+        onClose={() => setPaymentEntryId(null)}
+      />
     </AppShell>
   );
 }

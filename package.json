@@ -32,5 +32,10 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "core-js@3.50.0": true,
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true
   }
 }
