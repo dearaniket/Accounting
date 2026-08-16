@@ -4,9 +4,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3, BookOpenText, FolderKanban,
-  LayoutDashboard, ScrollText, Settings,
+  LayoutDashboard, LogOut, ScrollText, Settings,
 } from "lucide-react";
 import { ReactNode } from "react";
+import { useAuth } from "@/components/providers/auth-provider";
 
 const links = [
   { href: "/",          label: "Overview",  icon: LayoutDashboard },
@@ -39,6 +40,7 @@ export function AppShell({
   const pathname = usePathname();
   const currentPage = resolveLabel(pathname);
   const CurrentIcon = currentPage.icon;
+  const { logout } = useAuth();
 
   return (
     <div className="min-h-dvh">
@@ -135,6 +137,16 @@ export function AppShell({
                 Ledgers, charts, and outstanding dues are all derived automatically from your entries.
               </p>
             </div>
+
+            {/* Logout */}
+            <button
+              onClick={logout}
+              className="focus-ring flex w-full items-center gap-2.5 rounded-[var(--radius-lg)] px-4 py-3 text-sm font-semibold text-[var(--text-muted)] transition hover:bg-[var(--danger-dim)] hover:text-[var(--danger)]"
+              style={{ border: "1px solid var(--border)" }}
+            >
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+              Sign Out
+            </button>
           </div>
         </aside>
 

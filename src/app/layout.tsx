@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { AppProvider } from "@/components/providers/app-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
 
 import "./globals.css";
 
@@ -25,7 +26,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="min-h-dvh antialiased">
-        <AppProvider>{children}</AppProvider>
+        <AuthProvider>
+          <AppProvider>{children}</AppProvider>
+        </AuthProvider>
       </body>
     </html>
   );
