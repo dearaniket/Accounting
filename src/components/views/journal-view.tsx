@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Plus, Calendar, Pencil, Trash2, CreditCard, PaperclipIcon, BookOpenText } from "lucide-react";
+import { Search, Plus, Calendar, Pencil, Trash2, CreditCard, PaperclipIcon, BookOpenText, AlertTriangle } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
@@ -94,6 +94,71 @@ function EntryCard({
         </div>
       </div>
     </button>
+  );
+}
+
+/* ─── Delete Confirm Dialog ─────────────────────────────────────────── */
+function DeleteConfirmDialog({
+  entry,
+  onConfirm,
+  onCancel,
+}: {
+  entry: JournalEntry;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.72)", backdropFilter: "blur(6px)" }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-dialog-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+    >
+      <div
+        className="glass w-full max-w-sm rounded-[var(--radius-xl)] p-6"
+        style={{ border: "1px solid rgba(244,63,94,0.35)" }}
+      >
+        {/* Icon */}
+        <div
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-full"
+          style={{ background: "var(--danger-dim)", border: "1px solid rgba(244,63,94,0.3)" }}
+        >
+          <AlertTriangle className="h-7 w-7 text-[var(--danger)]" aria-hidden />
+        </div>
+
+        {/* Text */}
+        <h3
+          id="delete-dialog-title"
+          className="font-display mt-4 text-center text-xl font-bold text-[var(--text-primary)]"
+        >
+          Delete this entry?
+        </h3>
+        <p className="mt-2 text-center text-sm leading-relaxed text-[var(--text-muted)]">
+          <span className="font-semibold text-[var(--text-secondary)]">{entry.particular}</span>
+          {" "}will be permanently deleted. This cannot be undone.
+        </p>
+
+        {/* Buttons */}
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            onClick={onCancel}
+            className="focus-ring rounded-[var(--radius-sm)] px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] transition hover:bg-[var(--bg-card-hover)]"
+            style={{ border: "1px solid var(--border)" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="focus-ring rounded-[var(--radius-sm)] px-4 py-3 text-sm font-bold text-white transition hover:opacity-90"
+            style={{ background: "var(--danger)", boxShadow: "0 0 20px rgba(244,63,94,0.3)" }}
+          >
+            Yes, delete
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -265,6 +330,14 @@ export function JournalView() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | undefined>();
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
   const [paymentEntryId, setPaymentEntryId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<JournalEntry | null>(null);
+
+  function handleDeleteConfirmed() {
+    if (!deleteTarget) return;
+    deleteEntry(deleteTarget.id);
+    if (selectedEntry?.id === deleteTarget.id) setSelectedEntry(undefined);
+    setDeleteTarget(null);
+  }
 
   const entries = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -364,10 +437,7 @@ export function JournalView() {
                 accounts={data.itemAccounts}
                 onEdit={() => setEntryDialogOpen(true)}
                 onAddPayment={() => setPaymentEntryId(selectedEntry.id)}
-                onDelete={() => {
-                  deleteEntry(selectedEntry.id);
-                  setSelectedEntry(undefined);
-                }}
+                onDelete={() => setDeleteTarget(selectedEntry)}
               />
             ) : (
               <div className="glass flex min-h-[360px] flex-col items-center justify-center rounded-[var(--radius-xl)] p-8 text-center">
@@ -413,6 +483,15 @@ export function JournalView() {
         open={Boolean(paymentEntryId)}
         onClose={() => setPaymentEntryId(null)}
       />
+
+      {/* Delete confirmation */}
+      {deleteTarget && (
+        <DeleteConfirmDialog
+          entry={deleteTarget}
+          onConfirm={handleDeleteConfirmed}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </AppShell>
   );
 }
